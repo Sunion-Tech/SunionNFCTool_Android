@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 基本顏色 -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+
+    <!-- 主題顏色 -->
+    <color name="primary">@color/purple_500</color> <!-- 主要品牌色 -->
+    <color name="primary_variant">@color/purple_700</color> <!-- 主要品牌色變化 -->
+    <color name="on_primary">#FFFFFF</color> <!-- 主要品牌色上的文字色 -->
+
+    <color name="secondary">@color/teal_200</color> <!-- 次要品牌色 -->
+    <color name="secondary_variant">@color/teal_700</color> <!-- 次要品牌色變化 -->
+    <color name="on_secondary">#000000</color> <!-- 次要品牌色上的文字色 -->
+
+    <!-- 背景顏色 -->
+    <color name="background">#FFFFFF</color> <!-- 整體背景色 -->
+    <color name="on_background">#000000</color> <!-- 背景上的文字色 -->
+
+    <!-- 表面顏色 (如卡片或對話框背景) -->
+    <color name="surface">#FFFFFF</color>
+    <color name="on_surface">#000000</color> <!-- 表面上的文字色 -->
+
+    <!-- 成功顏色 -->
+    <color name="success">#00C853</color>
+    <color name="on_success">#FFFFFF</color> <!-- 錯誤顏色上的文字色 -->
+
+    <!-- 錯誤顏色 -->
+    <color name="error">#B00020</color>
+    <color name="on_error">#FFFFFF</color> <!-- 錯誤顏色上的文字色 -->
+
+    <!-- 狀態欄顏色 -->
+    <color name="status_bar_color">#FFFFFF</color>
+    <color name="navigation_bar_color">#000000</color>
+
+    <color name="blue_500">#FF2196F3</color>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+</resources>

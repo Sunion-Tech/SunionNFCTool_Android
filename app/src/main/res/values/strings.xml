@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">SunionNFCTool</string>
+    <string name="no_nfc">NFC isn\'t supported on this device</string>
+    <string name="intro_message">Start</string>
+    <string name="clear_all">Clear all</string>
+    <string name="close_app">Close app</string>
+</resources>
