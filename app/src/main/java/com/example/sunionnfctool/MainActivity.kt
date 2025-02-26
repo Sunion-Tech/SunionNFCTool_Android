@@ -37,8 +37,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -79,6 +77,9 @@ class MainActivity : ComponentActivity() {
     private var isNfcWritable = mutableStateOf(false)
     private val jsonFileName = mutableStateOf("")
     private val typeContent = mutableStateOf("")
+    private val selectedName = mutableStateOf("")
+    private val selectedVersion = mutableStateOf("")
+    private val searchText = mutableStateOf("")
     private val isWriteSuccess = mutableStateOf(false)
     private val isWriteFail = mutableStateOf(false)
     private val isTestWriteData = false // Test click and write nfc data
@@ -107,6 +108,9 @@ class MainActivity : ComponentActivity() {
                 typeContent = typeContent,
                 isWriteSuccess = isWriteSuccess,
                 isWriteFail = isWriteFail,
+                selectedName = selectedName,
+                selectedVersion = selectedVersion,
+                searchText = searchText,
                 isTestWriteData = isTestWriteData
             )
         }
@@ -249,6 +253,9 @@ fun NfcTagScreen(
     selectedMessageIndexState: MutableState<Int>,
     isWriteSuccess: MutableState<Boolean>,
     isWriteFail: MutableState<Boolean>,
+    selectedName: MutableState<String>,
+    selectedVersion: MutableState<String>,
+    searchText: MutableState<String>,
     jsonFileName: MutableState<String>,
     typeContent: MutableState<String>,
     isTestWriteData: Boolean
@@ -311,6 +318,11 @@ fun NfcTagScreen(
                             }
                         }
                     }
+
+                    selectedName.value = ""
+                    selectedVersion.value = ""
+                    searchText.value = ""
+                    
                     FetchAndDisplayJson(
                         fileName = jsonFileName.value,
                         typeContent = typeContent.value,
@@ -318,7 +330,10 @@ fun NfcTagScreen(
                         isWaitingForNfc = isWaitingForNfc,
                         newTextState = newTextState,
                         isWriteSuccess = isWriteSuccess,
-                        isWriteFail = isWriteFail
+                        isWriteFail = isWriteFail,
+                        selectedName = selectedName,
+                        selectedVersion = selectedVersion,
+                        searchText = searchText,
                     )
                 }
             }
@@ -391,7 +406,10 @@ fun ProductionDropdowns(
     isWaitingForNfc: MutableState<Boolean>,
     newTextState: MutableState<String>,
     isWriteSuccess: MutableState<Boolean>,
-    isWriteFail: MutableState<Boolean>
+    isWriteFail: MutableState<Boolean>,
+    selectedName: MutableState<String>,
+    selectedVersion: MutableState<String>,
+    searchText: MutableState<String>,
 ) {
     val originType = typeContent.split("|:|")[0]
     val originVersion = typeContent.split("|:|")[1]
@@ -405,9 +423,6 @@ fun ProductionDropdowns(
             mappingContent = "Name:$name, Version:$version"
         }
     }
-    val selectedName = remember { mutableStateOf("") }
-    val selectedVersion = remember { mutableStateOf("") }
-    var searchText by remember { mutableStateOf("") }
 
     // 選項列表
     val nameOptions = productionModel.productionList?.map { it.name } ?: emptyList()
@@ -436,16 +451,14 @@ fun ProductionDropdowns(
                 Text(text = "Version: ${selectedVersion.value}", style = MaterialTheme.typography.bodyLarge)
                 Text(text = "Write Data: $writeData", style = MaterialTheme.typography.bodyLarge)
                 TextField(
-                    value = searchText,
-                    onValueChange = { searchText = it },
+                    value = searchText.value,
+                    onValueChange = { searchText.value = it },
                     readOnly = false,
                     modifier = Modifier.fillMaxWidth(),
                     placeholder = { Text(text = "Filter Select Name") }
                 )
             }
-            val filteredNameOptions = remember(searchText) {
-                nameOptions.filter { it.contains(searchText, ignoreCase = true) }
-            }
+            val filteredNameOptions = nameOptions.filter { it.contains(searchText.value, ignoreCase = true) }
             Column(
                 modifier = Modifier
                     .fillMaxWidth().padding(vertical = 16.dp),
@@ -546,7 +559,10 @@ fun FetchAndDisplayJson(
     isWaitingForNfc: MutableState<Boolean>,
     newTextState: MutableState<String>,
     isWriteSuccess: MutableState<Boolean>,
-    isWriteFail: MutableState<Boolean>
+    isWriteFail: MutableState<Boolean>,
+    selectedName: MutableState<String>,
+    selectedVersion: MutableState<String>,
+    searchText: MutableState<String>,
 ) {
     val serverUrl = BuildConfig.API_GATEWAY_ENDPOINT
     val url = "$serverUrl$fileName.json"
@@ -605,7 +621,7 @@ fun FetchAndDisplayJson(
         Text(text = "Data format error.", color = colorResource(R.color.error), fontSize = 24.sp, style = MaterialTheme.typography.bodyLarge)
     } else {
         productionModel.value?.let { model ->
-            ProductionDropdowns(model, fileName, typeContent, isNfcWritable, isWaitingForNfc, newTextState, isWriteSuccess, isWriteFail)
+            ProductionDropdowns(model, fileName, typeContent, isNfcWritable, isWaitingForNfc, newTextState, isWriteSuccess, isWriteFail, selectedName, selectedVersion, searchText)
         } ?: Text(text = httpErrorMsg.value.ifBlank { "Loading..." }, color = if(httpErrorMsg.value.isBlank()) colorResource(R.color.black) else colorResource(R.color.error), fontSize = 24.sp, style = MaterialTheme.typography.bodyLarge)
     }
 }
@@ -624,6 +640,9 @@ fun PreviewNfcTagScreen() {
         typeContent = remember { mutableStateOf("74|:|114") },
         isWriteSuccess = remember { mutableStateOf(false) },
         isWriteFail = remember { mutableStateOf(false) },
+        selectedName = remember { mutableStateOf("") },
+        selectedVersion = remember { mutableStateOf("") },
+        searchText = remember { mutableStateOf("") },
         isTestWriteData = false
     )
 }
