@@ -32,6 +32,7 @@
     <!-- 狀態欄顏色 -->
     <color name="status_bar_color">#FFFFFF</color>
     <color name="navigation_bar_color">#000000</color>
+    <color name="version_color">#7496AF</color>
 
     <color name="blue_500">#FF2196F3</color>
     <color name="purple_200">#FFBB86FC</color>

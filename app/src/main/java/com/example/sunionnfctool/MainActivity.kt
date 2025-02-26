@@ -37,6 +37,8 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -45,6 +47,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -228,7 +231,7 @@ class MainActivity : ComponentActivity() {
         val parts = input.split("|:|")
         // 檢查分割後的結果是否有至少兩個部分
         if (parts.size >= 2) {
-            return "${parts[0]}_${parts[1]}"
+            return "${parts[0]}/${parts[0]}_${parts[1]}"
         }
         // 如果格式不符合，回傳 null
         return null
@@ -264,6 +267,7 @@ fun NfcTagScreen(
 
         if (nfcMessages.isEmpty()) {
             Text(text = "Start to tag NFC.", style = MaterialTheme.typography.bodyLarge)
+            Spacer(modifier = Modifier.weight(1f))
         } else {
             LazyColumn(
                 modifier = Modifier.weight(1f)
@@ -318,6 +322,17 @@ fun NfcTagScreen(
                     )
                 }
             }
+        }
+        Box(
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            val versionName = BuildConfig.VERSION_NAME.substringBeforeLast(".")
+            Text(
+                text = stringResource(id = R.string.launcher_version, versionName),
+                color = colorResource(id = R.color.version_color),
+                fontSize = 10.sp,
+                modifier = Modifier.align(Alignment.BottomEnd)
+            )
         }
     }
 }
@@ -392,6 +407,7 @@ fun ProductionDropdowns(
     }
     val selectedName = remember { mutableStateOf("") }
     val selectedVersion = remember { mutableStateOf("") }
+    var searchText by remember { mutableStateOf("") }
 
     // 選項列表
     val nameOptions = productionModel.productionList?.map { it.name } ?: emptyList()
@@ -419,6 +435,16 @@ fun ProductionDropdowns(
                 Text(text = "Type: $type", style = MaterialTheme.typography.bodyLarge)
                 Text(text = "Version: ${selectedVersion.value}", style = MaterialTheme.typography.bodyLarge)
                 Text(text = "Write Data: $writeData", style = MaterialTheme.typography.bodyLarge)
+                TextField(
+                    value = searchText,
+                    onValueChange = { searchText = it },
+                    readOnly = false,
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text(text = "Filter Select Name") }
+                )
+            }
+            val filteredNameOptions = remember(searchText) {
+                nameOptions.filter { it.contains(searchText, ignoreCase = true) }
             }
             Column(
                 modifier = Modifier
@@ -434,7 +460,7 @@ fun ProductionDropdowns(
                     // Type Dropdown
                     DropdownMenuBox(
                         label = "Select Name",
-                        options = nameOptions,
+                        options = filteredNameOptions,
                         selectedOption = selectedName.value,
                         onOptionSelected = { newName ->
                             selectedName.value = newName
@@ -549,7 +575,7 @@ fun FetchAndDisplayJson(
                             withContext(Dispatchers.Main) {
                                 if(model.model.isNullOrBlank() || model.productionList.isNullOrEmpty()) {
                                     productionModel.value = null
-                                    httpErrorMsg.value = "Json format Error."
+                                    httpErrorMsg.value = "Json format error."
                                 } else {
                                     productionModel.value = model
                                 }
@@ -558,18 +584,18 @@ fun FetchAndDisplayJson(
                             // 如果 JSON 格式錯誤，將 productionModel 設為空值
                             withContext(Dispatchers.Main) {
                                 productionModel.value = null
-                                httpErrorMsg.value = "Json format Error."
+                                httpErrorMsg.value = "Json format error."
                             }
-                            Timber.e("JSON parsing error: ${e.message}")
+                            Timber.e("Json parsing error: ${e.message}")
                         }
                     }
                 } else {
-                    Timber.d("HTTP Error: ${response.code}")
-                    httpErrorMsg.value = "HTTP Error: ${response.code}"
+                    Timber.e("Error file name: $fileName.json, url: $url, http error: ${response.code}")
+                    httpErrorMsg.value = "Error file name: $fileName.json \n\nHttp error: ${response.code}"
                 }
             } catch (e: IOException) {
-                Timber.e("Error fetching JSON: ${e.message}")
-                httpErrorMsg.value = "Error fetching JSON: ${e.message}"
+                Timber.e("Error fetching json: ${e.message}")
+                httpErrorMsg.value = "Error fetching json: ${e.message}"
             }
         }
     }

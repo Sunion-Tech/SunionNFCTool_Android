@@ -11,7 +11,7 @@ ext {
 
     versionMinor = 0
 
-    versionPatch = 0
+    versionPatch = 1
 
     versionBuild = 0
 }
