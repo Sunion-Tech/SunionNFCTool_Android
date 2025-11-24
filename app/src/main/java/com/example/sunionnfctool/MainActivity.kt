@@ -20,9 +20,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.DropdownMenuItem
@@ -46,6 +48,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -85,6 +89,7 @@ class MainActivity : ComponentActivity() {
     private val isTestWriteData = false // Test click and write nfc data
     private val selectedMessageIndex = mutableIntStateOf(1)
     private val newTestText = mutableStateOf("77|:|101")
+    private var lastWriteData = mutableStateOf("")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -111,7 +116,8 @@ class MainActivity : ComponentActivity() {
                 selectedName = selectedName,
                 selectedVersion = selectedVersion,
                 searchText = searchText,
-                isTestWriteData = isTestWriteData
+                isTestWriteData = isTestWriteData,
+                lastWriteData = lastWriteData
             )
         }
     }
@@ -158,6 +164,7 @@ class MainActivity : ComponentActivity() {
                 Timber.d("Successfully wrote to NFC tag.")
                 isWriteSuccess.value = true
                 isWriteFail.value = false
+                lastWriteData.value = newTestText.value
             } else {
                 Timber.e("Failed to write to NFC tag.")
                 isWriteFail.value = true
@@ -258,12 +265,14 @@ fun NfcTagScreen(
     searchText: MutableState<String>,
     jsonFileName: MutableState<String>,
     typeContent: MutableState<String>,
-    isTestWriteData: Boolean
+    isTestWriteData: Boolean,
+    lastWriteData: MutableState<String>
 ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .statusBarsPadding()
+            .statusBarsPadding()       // 加上 padding 避免 UI 被狀態列擋住
+            .navigationBarsPadding()   // 避免 UI 被導航列擋住
             .padding(16.dp)
     ) {
         Text(
@@ -334,6 +343,7 @@ fun NfcTagScreen(
                         selectedName = selectedName,
                         selectedVersion = selectedVersion,
                         searchText = searchText,
+                        lastWriteData = lastWriteData
                     )
                 }
             }
@@ -344,7 +354,7 @@ fun NfcTagScreen(
             val versionName = BuildConfig.VERSION_NAME.substringBeforeLast(".")
             Text(
                 text = stringResource(id = R.string.launcher_version, versionName),
-                color = colorResource(id = R.color.version_color),
+                color = colorResource(id = R.color.black),
                 fontSize = 10.sp,
                 modifier = Modifier.align(Alignment.BottomEnd)
             )
@@ -410,10 +420,11 @@ fun ProductionDropdowns(
     selectedName: MutableState<String>,
     selectedVersion: MutableState<String>,
     searchText: MutableState<String>,
+    lastWriteData: MutableState<String>,
 ) {
     val originType = typeContent.split("|:|")[0]
     val originVersion = typeContent.split("|:|")[1]
-    Timber.d("originType:$originType originVersion:$originVersion")
+    Timber.d("originType:$originType originVersion:$originVersion lastWriteData:${lastWriteData.value}")
     var mappingContent = ""
     if(originType.isNotBlank() && originVersion.isNotBlank()){
         val name = productionModel.productionList?.firstOrNull { it.type == originType && it.version.contains(originVersion) }?.name ?: ""
@@ -441,8 +452,12 @@ fun ProductionDropdowns(
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.Start
             ) {
+                if(lastWriteData.value.isNotBlank() && selectedName.value.isBlank() && selectedVersion.value.isBlank()){
+                    val isTheSameData = if(typeContent == lastWriteData.value) colorResource(R.color.success) else colorResource(R.color.error)
+                    Text(text = "Last Write Data: ${lastWriteData.value}", color = isTheSameData, style = MaterialTheme.typography.bodyLarge)
+                }
                 if(mappingContent.isNotBlank()){
-                    Text(text = "Origin $mappingContent", color = colorResource(R.color.blue_500), style = MaterialTheme.typography.bodyLarge)
+//                    Text(text = "Origin $mappingContent", color = colorResource(R.color.blue_500), style = MaterialTheme.typography.bodyLarge)
                 }
                 Text(text = "File Name: $fileName.json", style = MaterialTheme.typography.bodyLarge)
                 Text(text = "Name: ${selectedName.value}", style = MaterialTheme.typography.bodyLarge)
@@ -481,7 +496,7 @@ fun ProductionDropdowns(
                         },
                     )
 
-                    Spacer(modifier = Modifier.width(60.dp))
+                    Spacer(modifier = Modifier.width(30.dp))
 
                     // Version Dropdown
                     DropdownMenuBox(
@@ -489,7 +504,6 @@ fun ProductionDropdowns(
                         options = versionOptions,
                         selectedOption = selectedVersion.value,
                         onOptionSelected = { selectedVersion.value = it },
-                        modifier = Modifier.wrapContentWidth()
                     )
                 }
                 Button(
@@ -525,13 +539,29 @@ fun DropdownMenuBox(
     val expanded = remember { mutableStateOf(false) }
 
     Box(modifier = modifier) {
-        Column {
-            Text(text = label, style = MaterialTheme.typography.bodyLarge)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally // 👈 讓 label 置中
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
             OutlinedButton(
                 onClick = { expanded.value = true },
+                modifier = Modifier
+                    .widthIn(max = 180.dp) //限制最大寬度避免撐開 layout
+                    .wrapContentWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = colorResource(id = R.color.secondary_variant)
             )) {
-                Text(text = selectedOption.ifEmpty { if(label.contains("Type")) "Type" else "Version" }, style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    text = selectedOption.ifEmpty { if(label.contains("Name")) "Name" else "Version" },
+                    style = MaterialTheme.typography.bodyLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
         DropdownMenu(
@@ -563,6 +593,7 @@ fun FetchAndDisplayJson(
     selectedName: MutableState<String>,
     selectedVersion: MutableState<String>,
     searchText: MutableState<String>,
+    lastWriteData: MutableState<String>
 ) {
     val serverUrl = BuildConfig.API_GATEWAY_ENDPOINT
     val url = "$serverUrl$fileName.json"
@@ -621,7 +652,7 @@ fun FetchAndDisplayJson(
         Text(text = "Data format error.", color = colorResource(R.color.error), fontSize = 24.sp, style = MaterialTheme.typography.bodyLarge)
     } else {
         productionModel.value?.let { model ->
-            ProductionDropdowns(model, fileName, typeContent, isNfcWritable, isWaitingForNfc, newTextState, isWriteSuccess, isWriteFail, selectedName, selectedVersion, searchText)
+            ProductionDropdowns(model, fileName, typeContent, isNfcWritable, isWaitingForNfc, newTextState, isWriteSuccess, isWriteFail, selectedName, selectedVersion, searchText, lastWriteData)
         } ?: Text(text = httpErrorMsg.value.ifBlank { "Loading..." }, color = if(httpErrorMsg.value.isBlank()) colorResource(R.color.black) else colorResource(R.color.error), fontSize = 24.sp, style = MaterialTheme.typography.bodyLarge)
     }
 }
@@ -643,6 +674,7 @@ fun PreviewNfcTagScreen() {
         selectedName = remember { mutableStateOf("") },
         selectedVersion = remember { mutableStateOf("") },
         searchText = remember { mutableStateOf("") },
-        isTestWriteData = false
+        isTestWriteData = false,
+        lastWriteData = remember { mutableStateOf("") },
     )
 }
